@@ -1,27 +1,31 @@
 #!/bin/sh
-# INSTA STALKER - Busca menções públicas ao @ de Instagram
+# INSTA STALKER - Busca menções públicas usando link do perfil
 
 echo "==== INSTA STALKER ===="
 
-printf "Digite o @ do Instagram (ex: usuario): "
-read user
+printf "Cole o link do perfil do Instagram: "
+read profile_link
 
-insta_user=${user#@}
+# Remove parâmetros ?igsh=...
+clean_link=$(echo "$profile_link" | cut -d'?' -f1)
+
+# Extrai o username
+insta_user=$(echo "$clean_link" | awk -F/ '{print $4}')
 
 profile_url="https://www.instagram.com/$insta_user/"
 
-echo "[*] Checando se o perfil $profile_url é público..."
+echo "[*] Checando perfil: $profile_url"
 
 profile_html=$(curl -s -A "Mozilla/5.0" "$profile_url")
 
 if echo "$profile_html" | grep -i -q "private"; then
-echo "[!] O perfil @$insta_user é privado ou não encontrado."
+echo "[!] O perfil é privado ou não encontrado."
 exit 1
 fi
 
 echo "[OK] Perfil público detectado!"
 
-echo "[*] Buscando menções públicas ao @$insta_user..."
+echo "[*] Buscando menções públicas..."
 
 search_query="site:instagram.com \"$insta_user\""
 
