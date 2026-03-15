@@ -1,60 +1,76 @@
-# INSTA_STALKER
+# INSTA_STALKER (iSH / Linux)
 
-Script simples para buscar menções públicas do @ de um perfil do Instagram, feito para rodar facilmente no Termux (Android) e também em distribuições Linux.
+Script simples para buscar menções públicas de um @ do Instagram usando apenas informações públicas da web.
 
----
+Compatível com:
 
-## ⚡ Instalação e uso rápido no Termux
-
-Basta colar este comando no Termux:
-
-pkg update && pkg install -y git curl && git clone https://github.com/okadatdm-oss/INSTA_STALKER.git && cd INSTA_STALKER && chmod +x insta_stalker.sh && ./insta_stalker.sh
+- iSH (iOS)
+- Linux
+- Alpine Linux
 
 ---
 
-## 📚 Passo a passo detalhado
+# ⚡ Instalação rápida no iSH
 
-### 1. Atualizar e instalar dependências
+Execute os comandos abaixo:
 
-pkg update  
-pkg install git curl  
+apk update
+apk add git curl
 
----
+git clone https://github.com/okadatdm-oss/INSTA_STALKER.git
 
-### 2. Clonar o repositório
+cd INSTA_STALKER
 
-git clone https://github.com/okadatdm-oss/INSTA_STALKER.git  
-cd INSTA_STALKER  
+chmod +x insta_stalker.sh
 
----
-
-### 3. Dar permissão de execução
-
-chmod +x insta_stalker.sh  
+sh insta_stalker.sh
 
 ---
 
-### 4. Rodar o script
+# 📜 Script
 
-./insta_stalker.sh  
+Crie um arquivo chamado **insta_stalker.sh** e coloque o código abaixo:
 
----
+```sh
+#!/bin/sh
+# INSTA STALKER - Busca menções públicas ao @ de Instagram
 
-## 🤔 O que o script faz?
+echo "==== INSTA STALKER ===="
 
-- Recebe um @ do Instagram do usuário
-- Verifica se o perfil é público
-- Procura contas públicas que mencionaram esse @ usando resultados da web
+printf "Digite o @ do Instagram (ex: usuario): "
+read user
 
----
+# Remove @ se existir
+insta_user=${user#@}
 
-## 🚨 Observações importantes
+profile_url="https://www.instagram.com/$insta_user/"
 
-- O script **NÃO hackeia contas**
-- Ele apenas busca **informações públicas**
-- Resultados dependem do que o Google indexou
-- Contas privadas não aparecem
+echo "[*] Checando se o perfil $profile_url é público..."
 
----
+profile_html=$(curl -s -A "Mozilla/5.0" "$profile_url")
 
-## 🛠️ Exemplo de uso
+if echo "$profile_html" | grep -i -q "private"; then
+echo "[!] O perfil @$insta_user é privado ou não encontrado."
+exit 1
+fi
+
+echo "[OK] Perfil público detectado!"
+
+echo "[*] Buscando menções públicas ao @$insta_user..."
+
+search_query="site:instagram.com \"$insta_user\""
+
+search_url="https://www.google.com/search?q=$(echo "$search_query" | sed 's/ /+/g')"
+
+serp=$(curl -s -A "Mozilla/5.0" "$search_url")
+
+echo "[*] Contas que mencionaram @$insta_user:"
+
+echo "$serp" \
+| grep -o -E 'instagram.com/[a-zA-Z0-9_.]+' \
+| grep -v "/$insta_user" \
+| awk -F/ '{print "@"$2}' \
+| sort \
+| uniq
+
+echo "==== FIM ===="
